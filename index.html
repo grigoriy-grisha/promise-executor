@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Document</title>
+</head>
+<body>
+<script>
+
+
+  function parallel(maxParallelPromises) {
+    let countActivePromises = 0
+    const waitingPromises = []
+
+    const incrementCountActivePromises = () => countActivePromises++
+    const decrementCountActivePromises = () => countActivePromises--
+
+    return function taskRunner(promise) {
+      return new Promise((resolve, reject) => {
+        const preparedPromise = () => promise().then(resolve, reject)
+
+        if (countActivePromises < maxParallelPromises) {
+          incrementCountActivePromises()
+          preparedPromise().then(() => {
+            decrementCountActivePromises()
+            runWaitingPromise()
+          })
+
+          return;
+        }
+
+        waitingPromises.push(preparedPromise)
+      })
+
+      function runWaitingPromise() {
+        if (waitingPromises.length === 0) return;
+        taskRunner(waitingPromises.shift())
+      }
+    }
+  }
+
+  const runTask = parallel(3);
+
+  runTask(() => new Promise((resolve) => setTimeout(resolve, 1000))).then(() => console.log("1"));
+  runTask(() => new Promise((resolve) => setTimeout(resolve, 1000))).then(() => console.log("2"));
+  runTask(() => new Promise((resolve) => setTimeout(resolve, 2000))).then(() => console.log("3"));
+  runTask(() => new Promise((resolve) => setTimeout(resolve, 3000))).then(() => console.log("4"));
+  runTask(() => new Promise((resolve) => setTimeout(resolve, 4000))).then(() => console.log("5"));
+  runTask(() => new Promise((resolve) => setTimeout(resolve, 4000))).then(() => console.log("6"));
+  runTask(() => new Promise((resolve) => setTimeout(resolve, 4000))).then(() => console.log("7"));
+  runTask(() => new Promise((resolve) => setTimeout(resolve, 4000))).then(() => console.log("8"));
+  runTask(() => new Promise((resolve) => setTimeout(resolve, 4000))).then(() => console.log("9"));
+</script>
+</body>
+</html>
